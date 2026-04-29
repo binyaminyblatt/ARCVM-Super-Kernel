@@ -80,6 +80,9 @@ jobs:
       # 6. Execute Build
       - name: Build Kernel
         run: |
+          # Inject syscall_hardening=off into the build environment
+          export KERNEL_CMDLINE="syscall_hardening=off"
+
           # Use LTO Thin for speed; output as x86_64 bzImage for ARCVM
           LTO=thin BUILD_CONFIG=common-modules/virtual-device/build.config.virtual_device.x86_64 build/build.sh
 
