@@ -75,6 +75,7 @@ jobs:
             echo "CONFIG_KSU=y"
             echo "CONFIG_KPROBES=y"
             echo "CONFIG_KPROBE_EVENTS=y"
+            echo "CONFIG_KSU_KPROBE_HOOKS=y"
           } >> $FRAG
       # 6. Execute Build
       - name: Build Kernel
