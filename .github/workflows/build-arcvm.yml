@@ -9,12 +9,13 @@ jobs:
       - name: Force Cleanup Previous Run
         run: |
           sudo swapoff -a || true
-          sudo umount -l /home/runner/work/ARCVM-Super-Kernel/ARCVM-Super-Kernel || true
+          sudo umount -l /home/runner/work || true
           sudo lvremove -f buildvg || true
           sudo vgremove -f buildvg || true
           sudo pvremove -f /dev/loop0 /dev/loop1 || true
           sudo losetup -D || true
           sudo rm -f /pv.img /mnt/tmp-pv.img
+
       # 1. Clear disk space (CRITICAL: Public runners only have ~14GB usable otherwise)
       - name: Maximize Build Space
         uses: easimon/maximize-build-space@v10
@@ -26,6 +27,7 @@ jobs:
           remove-haskell: 'true'
           remove-codeql: 'true'
           remove-docker-images: 'true'
+          build-mount-path: /home/runner/work
 
       - name: Install Dependencies
         run: |
@@ -34,7 +36,18 @@ jobs:
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
           echo "$HOME/bin" >> $GITHUB_PATH
-
+      - name: Setup Environment (Merged Logic)
+        run: |
+          # 1. Setup Ccache on the BIG DISK
+          export CCACHE_DIR="$GITHUB_WORKSPACE/.ccache"
+          mkdir -p "$CCACHE_DIR"
+          echo "CCACHE_DIR=$CCACHE_DIR" >> "$GITHUB_ENV"
+          
+          # 2. Setup Repo Tool
+          mkdir -p "$GITHUB_WORKSPACE/git-repo"
+          curl -L https://storage.googleapis.com/git-repo-downloads/repo -o "$GITHUB_WORKSPACE/git-repo/repo"
+          chmod +x "$GITHUB_WORKSPACE/git-repo/repo"
+          echo "$GITHUB_WORKSPACE/git-repo" >> "$GITHUB_PATH"
       # 2. Sync Kernel Source (Shallow & Optimized)
       - name: Sync Source (GKI 5.10)
         run: |
