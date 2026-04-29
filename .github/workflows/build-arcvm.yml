@@ -25,6 +25,7 @@ jobs:
           remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
+          remove-docker-images: 'true'
 
       - name: Install Dependencies
         run: |
@@ -48,67 +49,33 @@ jobs:
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s main
           cd ..
 
-      # 4. Apply SusFS Patches (5.10 GKI Branch)
-      # - name: Apply SusFS
-      #   run: |
-      #     git clone -b gki-android13-5.10 https://gitlab.com/simonpunk/susfs4ksu.git
-      #     # Bridge KSU Next to SusFS
-      #     cd common/KernelSU-Next
-      #     patch -p1 < ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch
-      #     cd ../..
-      #     # Patch Kernel Core
-      #     cd common
-      #     cp ../susfs4ksu/kernel_patches/fs/susfs.c fs/
-      #     cp ../susfs4ksu/kernel_patches/include/linux/susfs.h include/linux/
-      #     patch -p1 < ../susfs4ksu/kernel_patches/50_add_susfs_in_kernel-5.10.patch
-      #     patch -p1 < ../susfs4ksu/kernel_patches/fs/0001-fs-add-susfs-support.patch
-      #     cd ..
-
-      # 5. Inject Super-Features into Fragment
-      # - name: Configure Features
-      #   run: |
-      #     FRAG="common-modules/virtual-device/virtual_device.fragment"
-      #     echo "# Network Features" >> $FRAG
-      #     echo "CONFIG_WIREGUARD=y" >> $FRAG
-      #     echo "CONFIG_TCP_CONG_BBR=y" >> $FRAG
-      #     echo "CONFIG_DEFAULT_BBR=y" >> $FRAG
-      #     echo "CONFIG_NETFILTER_XT_SET=y" >> $FRAG
-      #     echo "CONFIG_IP_SET=y" >> $FRAG
-      #     echo "CONFIG_NETFILTER_XT_TARGET_TPROXY=y" >> $FRAG
-      #     echo "# Memory & Performance" >> $FRAG
-      #     echo "CONFIG_LRU_GEN=y" >> $FRAG
-      #     echo "CONFIG_LRU_GEN_ENABLED=y" >> $FRAG
-      #     echo "# Stealth & Overlays" >> $FRAG
-      #     echo "CONFIG_OVERLAY_FS=y" >> $FRAG
-      #     echo "CONFIG_KSU_SUSFS=y" >> $FRAG
-      #     echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUS_PATH=y" >> $FRAG
-      #     echo "CONFIG_KSU_SUSFS_HIDE_KSU_SUS_MOUNT=y" >> $FRAG
-      #     echo "CONFIG_KSU_SUSFS_SPOOF_UNAME=y" >> $FRAG
-      #     # Required for KSU Next
-      #     echo "CONFIG_KPROBES=y" >> $FRAG
-      #     echo "CONFIG_KPROBE_EVENTS=y" >> $FRAG
-      - name: Configure Features
+      - name: Configure ARCVM Features
         run: |
           FRAG="common-modules/virtual-device/virtual_device.fragment"
           {
-            echo "# Network Features"
+            echo "# Build Identity (Matching your 2025 build)"
+            echo "CONFIG_LOCALVERSION=\"-1008312-g500d05631d89\""
+            
+            echo "# Performance Features"
             echo "CONFIG_WIREGUARD=y"
             echo "CONFIG_TCP_CONG_BBR=y"
             echo "CONFIG_DEFAULT_BBR=y"
-            echo "CONFIG_NETFILTER_XT_SET=y"
-            echo "CONFIG_IP_SET=y"
-            echo "CONFIG_NETFILTER_XT_TARGET_TPROXY=y"
-            echo "# Memory & Performance"
             echo "CONFIG_LRU_GEN=y"
             echo "CONFIG_LRU_GEN_ENABLED=y"
-            echo "# Overlays & Root"
+            
+            echo "# ARCVM VirtIO Drivers"
+            echo "CONFIG_DRM_VIRTIO_GPU=y"
+            echo "CONFIG_VIRTIO_PCI=y"
+            echo "CONFIG_VIRTIO_BLK=y"
+            echo "CONFIG_VIRTIO_NET=y"
+            echo "CONFIG_VIRTIO_CONSOLE=y"
+            
+            echo "# Root & Overlays"
             echo "CONFIG_OVERLAY_FS=y"
             echo "CONFIG_KSU=y"
             echo "CONFIG_KPROBES=y"
             echo "CONFIG_KPROBE_EVENTS=y"
-            echo "CONFIG_LOCALVERSION=-1008312-g500d05631d89"
           } >> $FRAG
-
       # 6. Execute Build
       - name: Build Kernel
         run: |
